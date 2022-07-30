@@ -1,0 +1,52 @@
+# Smart Animation
+
+## Usage
+
+```elixir
+Mix.install([{:kino, github: "livebook-dev/kino"}, {:smart_animation, path: "."}])
+```
+
+```elixir
+defmodule Counter do
+  use GenServer
+
+  def start_link(_) do
+    GenServer.start_link(__MODULE__, [], name: __MODULE__)
+  end
+
+  def init(_) do
+    send(self(), :increment)
+    {:ok, 0}
+  end
+
+  def handle_info(:increment, state) do
+    Process.sleep(1000)
+    send(self(), :increment)
+    {:noreply, state + 1}
+  end
+end
+
+{:ok, counter_pid} = Counter.start_link([])
+```
+
+```elixir
+:sys.get_state(counter_pid)
+```
+
+```elixir
+# send(counter_pid, :increment)
+```
+
+<!-- livebook:{"attrs":{"frame":185,"source":"awdawdawd"},"kind":"Elixir.SmartAnimation","livebook_object":"smart_cell"} -->
+
+```elixir
+0
+```
+
+```elixir
+attrs["frame"]
+```
+
+```elixir
+Process.send_after(self(), :message, 1000) |> IO.inspect()
+```
