@@ -6,11 +6,15 @@ defmodule SmartAnimation do
   @impl true
   def init(attrs, ctx) do
     source = attrs["source"] || ""
-    {:ok, assign(ctx, source: source, frame: 0), reevaluate_on_change: true}
+    :timer.send_interval(1000, :increment)
+    {:ok, assign(ctx, source: source, frame: 0, running: false), reevaluate_on_change: true}
   end
 
+  @impl true
   def handle_info(:increment, ctx) do
-    {:noreply, assign(ctx, frame: ctx.assigns.frame + 1)}
+    frame = if ctx.assigns.running, do: ctx.assigns.frame + 1, else: ctx.assigns.frame
+
+    {:noreply, assign(ctx, frame: frame)}
   end
 
   @impl true
@@ -26,35 +30,13 @@ defmodule SmartAnimation do
 
   @impl true
   def handle_event("stop", _, ctx) do
-    :timer.cancel(ctx.assigns.timer_ref)
-    {:noreply, ctx}
+    {:noreply, assign(ctx, running: false)}
   end
-
-  # click start button
-  # handle_event("start")
-  # trigger increment interval
-  # handle_info(:increment)
-  # stop increment interval
-
-  # handle_info(:start)
-  # trigger :start increment
 
   @impl true
   def handle_event("start", _, ctx) do
-
-    {:ok, timer_ref} = :timer.send_interval(1000, :increment)
-
-    {:noreply, assign(ctx, timer_ref: timer_ref)}
+    {:noreply, assign(ctx, running: true)}
   end
-
-  # timer1 -> timer_ref: timer1
-  # time2 -> timer_ref: timer2
-
-  # disable start button after click
-  # set a limit to the # of timers
-  # check if timer exists: do nothing or start timer again?
-  # set some running state: running: true or running: false, constant interval.
-
 
   @impl true
   def to_attrs(ctx) do

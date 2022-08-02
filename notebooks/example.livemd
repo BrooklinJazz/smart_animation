@@ -37,10 +37,14 @@ end
 # send(counter_pid, :increment)
 ```
 
-<!-- livebook:{"attrs":{"frame":185,"source":"awdawdawd"},"kind":"Elixir.SmartAnimation","livebook_object":"smart_cell"} -->
+```elixir
+Process.list() |> Enum.count()
+```
+
+<!-- livebook:{"attrs":{"frame":20,"source":"2 + 2"},"kind":"Elixir.SmartAnimation","livebook_object":"smart_cell"} -->
 
 ```elixir
-0
+20
 ```
 
 ```elixir
