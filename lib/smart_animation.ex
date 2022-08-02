@@ -39,6 +39,23 @@ defmodule SmartAnimation do
   end
 
   @impl true
+  def handle_event("restart", _, ctx) do
+    {:noreply, assign(ctx, frame: 0, running: true)}
+  end
+
+  @impl true
+  def handle_event("next", _, ctx) do
+    {:noreply, assign(ctx, frame: ctx.assigns.frame + 1, running: false)}
+  end
+
+  @impl true
+  def handle_event("previous", _, ctx) do
+    frame = if ctx.assigns.frame > 0, do: ctx.assigns.frame - 1, else: 0
+
+    {:noreply, assign(ctx, frame: frame, running: false)}
+  end
+
+  @impl true
   def to_attrs(ctx) do
     %{"source" => ctx.assigns.source, "frame" => ctx.assigns.frame}
   end
@@ -46,7 +63,8 @@ defmodule SmartAnimation do
   @impl true
   def to_source(attrs) do
     """
-    #{attrs["frame"]}
+    frame = #{attrs["frame"]}
+    #{attrs["source"]}
     """
   end
 
@@ -57,9 +75,11 @@ defmodule SmartAnimation do
 
       ctx.root.innerHTML = `
         <textarea id="source"></textarea>
-        <button id="stop">STOP</button>
         <button id="start">START</button>
-
+        <button id="stop">STOP</button>
+        <button id="restart">RESTART</button>
+        <button id="previous">PREVIOUS</button>
+        <button id="next">NEXT</button>
       `;
 
       const textarea = ctx.root.querySelector("#source");
@@ -79,14 +99,34 @@ defmodule SmartAnimation do
           document.activeElement.dispatchEvent(new Event("change"));
       });
 
+      const start = ctx.root.querySelector("#start");
+      start.addEventListener("click", (event) => {
+        start.style.display = "none"
+        stop.style.display = "inline"
+        ctx.pushEvent("start", {});
+      });
+
       const stop = ctx.root.querySelector("#stop");
+      stop.style.display = "none"
       stop.addEventListener("click", (event) => {
+        stop.style.display = "none"
+        start.style.display = "inline"
         ctx.pushEvent("stop", {});
       });
 
-      const start = ctx.root.querySelector("#start");
-      start.addEventListener("click", (event) => {
-        ctx.pushEvent("start", {});
+      const restart = ctx.root.querySelector("#restart");
+      restart.addEventListener("click", (event) => {
+        ctx.pushEvent("restart", {});
+      });
+
+      const next = ctx.root.querySelector("#next");
+      next.addEventListener("click", (event) => {
+        ctx.pushEvent("next", {});
+      });
+
+      const previous = ctx.root.querySelector("#previous");
+      previous.addEventListener("click", (event) => {
+        ctx.pushEvent("previous", {});
       });
     }
     """
