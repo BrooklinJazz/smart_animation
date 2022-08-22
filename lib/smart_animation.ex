@@ -19,8 +19,6 @@ defmodule SmartAnimation do
 
   @impl true
   def init({function, frame, range}, ctx) do
-    :timer.send_interval(1000, :increment)
-
     {start, finish} =
       case range do
         start..finish -> {start, finish}
@@ -32,6 +30,7 @@ defmodule SmartAnimation do
        finish: finish,
        start: start,
        step: start,
+       speed_multiplier: 1,
        running: false,
        frame: frame,
        function: function
@@ -64,6 +63,8 @@ defmodule SmartAnimation do
   @impl true
   def handle_info(:increment, ctx) do
     if ctx.assigns.running do
+      speed = round(1000 / ctx.assigns.speed_multiplier)
+      Process.send_after(self(), :increment, speed)
       {:noreply, ctx |> increment_step() |> update_animation()}
     else
       {:noreply, ctx}
@@ -82,6 +83,7 @@ defmodule SmartAnimation do
 
   @impl true
   def handle_event("start", _, ctx) do
+    Process.send_after(self(), :increment, 1000)
     {:noreply, assign(ctx, running: true)}
   end
 
@@ -100,6 +102,15 @@ defmodule SmartAnimation do
     {:noreply, ctx |> decrement_step() |> assign(running: false) |> update_animation()}
   end
 
+  def handle_event("toggle_speed", _, ctx) do
+    speed = ctx.assigns.speed_multiplier + 0.5
+    next_multiplier = if speed > 4, do: 1, else: speed
+
+    broadcast_event(ctx, "toggle_speed", %{"speed" => next_multiplier})
+
+    {:noreply, assign(ctx, speed_multiplier: next_multiplier)}
+  end
+
   asset "main.js" do
     """
     export function init(ctx, payload) {
@@ -113,6 +124,7 @@ defmodule SmartAnimation do
           <i id="start" class="ri-play-fill icon"></i>
           <i id="stop" class="ri-stop-fill icon"></i>
           <i id="next" class="ri-arrow-right-fill icon"></i>
+          <span id="speed_multiplier">1x</span>
         </section>
       `;
 
@@ -124,6 +136,10 @@ defmodule SmartAnimation do
 
       const start = ctx.root.querySelector("#start");
       const stop = ctx.root.querySelector("#stop");
+      const reset = ctx.root.querySelector("#reset");
+      const next = ctx.root.querySelector("#next");
+      const previous = ctx.root.querySelector("#previous");
+      const speed_multiplier = ctx.root.querySelector("#speed_multiplier");
 
       stop.style.display = "none"
 
@@ -139,19 +155,26 @@ defmodule SmartAnimation do
         ctx.pushEvent("stop", {});
       });
 
-      const reset = ctx.root.querySelector("#reset");
       reset.addEventListener("click", (event) => {
+        start.style.display = "inline"
+        stop.style.display = "none"
         ctx.pushEvent("reset", {});
       });
 
-      const next = ctx.root.querySelector("#next");
       next.addEventListener("click", (event) => {
         ctx.pushEvent("next", {});
       });
 
-      const previous = ctx.root.querySelector("#previous");
       previous.addEventListener("click", (event) => {
         ctx.pushEvent("previous", {});
+      });
+
+      speed_multiplier.addEventListener("click", (event) => {
+        ctx.pushEvent("toggle_speed", {});
+      });
+
+      ctx.handleEvent("toggle_speed", ({ speed }) => {
+        speed_multiplier.innerHTML = `${speed}x`;
       });
     }
     """
@@ -179,11 +202,15 @@ defmodule SmartAnimation do
     #reset {
       position: absolute;
       left: 1rem;
-      top: auto;
-      bottom: auto;
     }
 
-    .icon:hover, #reset:hover {
+    #speed_multiplier {
+      position: absolute;
+      right: 2rem;
+      padding: 0 1rem;
+    }
+
+    .icon:hover, #reset:hover, #speed_multiplier:hover {
       color: black;
       cursor: pointer
     }
