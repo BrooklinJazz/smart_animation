@@ -7,6 +7,18 @@ Mix.install([
 ])
 ```
 
+## Installation
+
+Add `SmartAnimation` to your setup section in your Livebook.
+
+<!-- livebook:{"force_markdown":true} -->
+
+```elixir
+Mix.install([
+  {:smart_animation, path: "brooklinjazz/smart_animation"},
+])
+```
+
 ## Usage
 
 ```elixir
