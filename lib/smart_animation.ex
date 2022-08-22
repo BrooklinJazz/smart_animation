@@ -1,42 +1,74 @@
 defmodule SmartAnimation do
   use Kino.JS
   use Kino.JS.Live
+  @max_speed 10
+  @min_speed 1
+  @default_speed 1
 
-  def new(list) when is_list(list), do: new(fn frame -> Enum.at(list, frame - 1) end)
+  @spec new(list() | Range.t() | nil, (integer() -> any()), list()) :: Kino.JS.Live.t()
+  def new(range_or_list \\ nil, function, opts \\ [])
 
-  def new(function) when is_function(function) do
-    frame = Kino.Frame.new()
-    Kino.render(frame)
-    Kino.Frame.render(frame, function.(1))
-    Kino.JS.Live.new(__MODULE__, {function, frame, nil})
+  def new(nil, start..finish = range, opts) when is_list(opts) do
+    component(%{
+      start: start,
+      finish: finish,
+      function: fn index -> Enum.at(range, index) end,
+      opts: opts
+    })
   end
 
-  def new(range, function) do
+  def new(nil, list, opts) when is_list(list) and is_list(opts) do
+    component(%{
+      start: 0,
+      finish: nil,
+      function: fn index -> Enum.at(list, index) end,
+      opts: opts
+    })
+  end
+
+  def new(nil, function, opts) when is_function(function) and is_list(opts) do
+    component(%{
+      start: 1,
+      finish: nil,
+      function: function,
+      opts: opts
+    })
+  end
+
+  def new(start..finish, function, opts) when is_function(function) and is_list(opts) do
+    component(%{
+      start: start,
+      finish: finish,
+      function: function,
+      opts: opts
+    })
+  end
+
+  def component(state) do
     frame = Kino.Frame.new()
     Kino.render(frame)
-    start.._finish = range
-    Kino.Frame.render(frame, function.(start))
-    Kino.JS.Live.new(__MODULE__, {function, frame, range})
+    Kino.Frame.render(frame, state.function.(state.start))
+
+    speed_multiplier =
+      Keyword.get(state.opts, :speed_multiplier, @default_speed)
+      |> max(@min_speed)
+      |> min(@max_speed)
+
+    IO.inspect(binding())
+
+    Kino.JS.Live.new(__MODULE__,
+      function: state.function,
+      frame: frame,
+      finish: state.finish,
+      speed_multiplier: speed_multiplier,
+      step: state.start,
+      start: state.start
+    )
   end
 
   @impl true
-  def init({function, frame, range}, ctx) do
-    {start, finish} =
-      case range do
-        start..finish -> {start, finish}
-        _ -> {1, nil}
-      end
-
-    {:ok,
-     assign(ctx,
-       finish: finish,
-       start: start,
-       step: start,
-       speed_multiplier: 1,
-       running: false,
-       frame: frame,
-       function: function
-     )}
+  def init(state, ctx) do
+    {:ok, assign(ctx, state)}
   end
 
   def increment_step(ctx) do
@@ -107,7 +139,7 @@ defmodule SmartAnimation do
 
   def handle_event("toggle_speed", _, ctx) do
     speed = ctx.assigns.speed_multiplier + 0.5
-    next_multiplier = if speed > 4, do: 1, else: speed
+    next_multiplier = if speed > @max_speed, do: @min_speed, else: speed
 
     broadcast_event(ctx, "toggle_speed", %{"speed" => next_multiplier})
 
