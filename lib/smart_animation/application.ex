@@ -7,9 +7,7 @@ defmodule SmartAnimation.Application do
 
   @impl true
   def start(_type, _args) do
-    Kino.SmartCell.register(SmartAnimation)
-    children = [
-    ]
+    children = []
 
     opts = [strategy: :one_for_one, name: SmartAnimation.Supervisor]
     Supervisor.start_link(children, opts)

@@ -1,31 +1,71 @@
 defmodule SmartAnimation do
   use Kino.JS
   use Kino.JS.Live
-  use Kino.SmartCell, name: "Plain code editor"
+
+  def new(function) do
+    frame = Kino.Frame.new()
+    Kino.render(function.(1))
+    Kino.JS.Live.new(__MODULE__, {function, frame, nil})
+  end
+
+  def new(range, function) do
+    frame = Kino.Frame.new()
+    start.._finish = range
+    Kino.render(function.(start))
+    Kino.JS.Live.new(__MODULE__, {function, frame, range})
+  end
 
   @impl true
-  def init(attrs, ctx) do
-    source = attrs["source"] || ""
+  def init({function, frame, range}, ctx) do
     :timer.send_interval(1000, :increment)
-    {:ok, assign(ctx, source: source, frame: 0, running: false), reevaluate_on_change: true}
+
+    {start, finish} =
+      case range do
+        start..finish -> {start, finish}
+        _ -> {1, nil}
+      end
+
+    {:ok,
+     assign(ctx,
+       finish: finish,
+       start: start,
+       step: start,
+       running: false,
+       frame: frame,
+       function: function
+     )}
+  end
+
+  def increment_step(ctx) do
+    incremented_step =
+      if ctx.assigns.finish && ctx.assigns.step >= ctx.assigns.finish,
+        do: ctx.assigns.start,
+        else: ctx.assigns.step + 1
+
+    assign(ctx, step: incremented_step)
+  end
+
+  def decrement_step(ctx) do
+    decremented_step =
+      if ctx.assigns.step <= ctx.assigns.start,
+        do: ctx.assigns.finish || ctx.assigns.start,
+        else: ctx.assigns.step - 1
+
+    assign(ctx, step: decremented_step)
   end
 
   @impl true
   def handle_info(:increment, ctx) do
-    frame = if ctx.assigns.running, do: ctx.assigns.frame + 1, else: ctx.assigns.frame
-
-    {:noreply, assign(ctx, frame: frame)}
+    if ctx.assigns.running do
+      {:noreply, ctx |> increment_step() |> update_animation()}
+    else
+      {:noreply, ctx}
+    end
   end
 
   @impl true
   def handle_connect(ctx) do
-    {:ok, %{source: ctx.assigns.source}, ctx}
-  end
-
-  @impl true
-  def handle_event("update", %{"source" => source}, ctx) do
-    broadcast_event(ctx, "update", %{"source" => source})
-    {:noreply, assign(ctx, source: source)}
+    {:ok, %{}, ctx}
   end
 
   @impl true
@@ -40,32 +80,22 @@ defmodule SmartAnimation do
 
   @impl true
   def handle_event("restart", _, ctx) do
-    {:noreply, assign(ctx, frame: 0, running: true)}
+    {:noreply, assign(ctx, step: ctx.assigns.start, running: true) |> update_animation()}
   end
 
   @impl true
   def handle_event("next", _, ctx) do
-    {:noreply, assign(ctx, frame: ctx.assigns.frame + 1, running: false)}
+    {:noreply, ctx |> increment_step() |> assign(running: false) |> update_animation()}
   end
 
   @impl true
   def handle_event("previous", _, ctx) do
-    frame = if ctx.assigns.frame > 0, do: ctx.assigns.frame - 1, else: 0
-
-    {:noreply, assign(ctx, frame: frame, running: false)}
+    {:noreply, ctx |> decrement_step() |> assign(running: false) |> update_animation()}
   end
 
-  @impl true
-  def to_attrs(ctx) do
-    %{"source" => ctx.assigns.source, "frame" => ctx.assigns.frame}
-  end
-
-  @impl true
-  def to_source(attrs) do
-    """
-    frame = #{attrs["frame"]}
-    #{attrs["source"]}
-    """
+  def update_animation(ctx) do
+    Kino.Frame.render(ctx.assigns.frame, ctx.assigns.function.(ctx.assigns.step))
+    ctx
   end
 
   asset "main.js" do
@@ -74,24 +104,12 @@ defmodule SmartAnimation do
       ctx.importCSS("main.css");
 
       ctx.root.innerHTML = `
-        <textarea id="source"></textarea>
         <button id="start">START</button>
         <button id="stop">STOP</button>
         <button id="restart">RESTART</button>
         <button id="previous">PREVIOUS</button>
         <button id="next">NEXT</button>
       `;
-
-      const textarea = ctx.root.querySelector("#source");
-      textarea.value = payload.source;
-
-      textarea.addEventListener("change", (event) => {
-        ctx.pushEvent("update", { source: event.target.value });
-      });
-
-      ctx.handleEvent("update", ({ source }) => {
-        textarea.value = source;
-      });
 
       ctx.handleSync(() => {
         // Synchronously invokes change listeners
@@ -134,11 +152,6 @@ defmodule SmartAnimation do
 
   asset "main.css" do
     """
-    #source {
-      box-sizing: border-box;
-      width: 100%;
-      min-height: 100px;
-    }
     """
   end
 end

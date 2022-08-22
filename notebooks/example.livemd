@@ -1,60 +1,57 @@
 # Smart Animation
 
+```elixir
+Mix.install([
+  {:smart_animation, path: "."},
+  {:hidden_cell, github: "brooklinjazz/hidden_cell"}
+])
+```
+
 ## Usage
 
 ```elixir
-Mix.install([{:kino, github: "livebook-dev/kino"}, {:smart_animation, path: "."}])
+
 ```
 
 ```elixir
-defmodule Counter do
+SmartAnimation.new(fn x ->
+  Kino.Markdown.new("This is animation frame #{x}")
+end)
+```
+
+```elixir
+SmartAnimation.new(1..10, fn x ->
+  Kino.Markdown.new("This is animation frame #{x}")
+end)
+```
+
+### Hidden Cell
+
+We recommend using this project with [Hidden Cell](https://github.com/BrooklinJazz/hidden_cell) if you want to hide the code powering the animation.
+
+<!-- livebook:{"attrs":{"source":"SmartAnimation.new(fn x ->\n  Kino.Markdown.new(\"This is animation frame #{x}\")\nend)","title":"Hidden Cell"},"kind":"Elixir.HiddenCell","livebook_object":"smart_cell"} -->
+
+```elixir
+SmartAnimation.new(fn x ->
+  Kino.Markdown.new("This is animation frame #{x}")
+end)
+```
+
+```elixir
+defmodule Timer do
   use GenServer
 
-  def start_link(_) do
-    GenServer.start_link(__MODULE__, [], name: __MODULE__)
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, [], opts)
   end
 
-  def init(_) do
-    send(self(), :increment)
-    {:ok, 0}
+  def init(state) do
+    {:ok, state}
   end
 
-  def handle_info(:increment, state) do
-    Process.sleep(1000)
-    send(self(), :increment)
-    {:noreply, state + 1}
-  end
+  def handle_info()
 end
 
-{:ok, counter_pid} = Counter.start_link([])
-```
-
-```elixir
-:sys.get_state(counter_pid)
-```
-
-```elixir
-# send(counter_pid, :increment)
-```
-
-```elixir
-Process.list() |> Enum.count()
-```
-
-<!-- livebook:{"attrs":{"frame":4,"source":""},"kind":"Elixir.SmartAnimation","livebook_object":"smart_cell"} -->
-
-```elixir
-frame = 4
-```
-
-```elixir
-max(-120, 0)
-```
-
-```elixir
-attrs["frame"]
-```
-
-```elixir
-Process.send_after(self(), :message, 1000) |> IO.inspect()
+# :timer.send_interval(1000, :increment)
+# :timer.start()
 ```
