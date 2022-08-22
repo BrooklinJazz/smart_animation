@@ -29,7 +29,7 @@ SmartAnimation.new(fn frame ->
 end)
 ```
 
-Can provide a range and function.
+`SmartAnimation` can accept a range and function.
 
 ```elixir
 SmartAnimation.new(0..10, fn index ->
@@ -37,12 +37,18 @@ SmartAnimation.new(0..10, fn index ->
 end)
 ```
 
-Smart Animation calculates the number of frames and displays the current count `1/7` even when the frames are `2..8`.
+`SmartAnimation` calculates the number of frames and displays the current count `1/7` even when the frames are `2..8`.
 
 ```elixir
 SmartAnimation.new(2..8, fn x ->
   Kino.Markdown.new("This is animation frame #{x}")
 end)
+```
+
+`SmartAnimation` can also accept a list of values to render.
+
+```elixir
+SmartAnimation.new(Enum.map(1..10, fn frame -> Kino.Markdown.new("### Heading #{frame}") end))
 ```
 
 ### Hidden Cell

@@ -2,7 +2,9 @@ defmodule SmartAnimation do
   use Kino.JS
   use Kino.JS.Live
 
-  def new(function) do
+  def new(list) when is_list(list), do: new(fn frame -> Enum.at(list, frame - 1) end)
+
+  def new(function) when is_function(function) do
     frame = Kino.Frame.new()
     Kino.render(frame)
     Kino.Frame.render(frame, function.(1))
