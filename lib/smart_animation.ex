@@ -4,14 +4,16 @@ defmodule SmartAnimation do
 
   def new(function) do
     frame = Kino.Frame.new()
-    Kino.render(function.(1))
+    Kino.render(frame)
+    Kino.Frame.render(frame, function.(1))
     Kino.JS.Live.new(__MODULE__, {function, frame, nil})
   end
 
   def new(range, function) do
     frame = Kino.Frame.new()
+    Kino.render(frame)
     start.._finish = range
-    Kino.render(function.(start))
+    Kino.Frame.render(frame, function.(start))
     Kino.JS.Live.new(__MODULE__, {function, frame, range})
   end
 
@@ -54,6 +56,11 @@ defmodule SmartAnimation do
     assign(ctx, step: decremented_step)
   end
 
+  def update_animation(ctx) do
+    Kino.Frame.render(ctx.assigns.frame, ctx.assigns.function.(ctx.assigns.step))
+    ctx
+  end
+
   @impl true
   def handle_info(:increment, ctx) do
     if ctx.assigns.running do
@@ -79,8 +86,8 @@ defmodule SmartAnimation do
   end
 
   @impl true
-  def handle_event("restart", _, ctx) do
-    {:noreply, assign(ctx, step: ctx.assigns.start, running: true) |> update_animation()}
+  def handle_event("reset", _, ctx) do
+    {:noreply, assign(ctx, step: ctx.assigns.start, running: false) |> update_animation()}
   end
 
   @impl true
@@ -93,22 +100,20 @@ defmodule SmartAnimation do
     {:noreply, ctx |> decrement_step() |> assign(running: false) |> update_animation()}
   end
 
-  def update_animation(ctx) do
-    Kino.Frame.render(ctx.assigns.frame, ctx.assigns.function.(ctx.assigns.step))
-    ctx
-  end
-
   asset "main.js" do
     """
     export function init(ctx, payload) {
       ctx.importCSS("main.css");
+      ctx.importCSS("https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css")
 
       ctx.root.innerHTML = `
-        <button id="start">START</button>
-        <button id="stop">STOP</button>
-        <button id="restart">RESTART</button>
-        <button id="previous">PREVIOUS</button>
-        <button id="next">NEXT</button>
+        <section class="control">
+          <span id="reset">Reset</span>
+          <i id="previous" class="ri-arrow-left-fill icon"></i>
+          <i id="start" class="ri-play-fill icon"></i>
+          <i id="stop" class="ri-stop-fill icon"></i>
+          <i id="next" class="ri-arrow-right-fill icon"></i>
+        </section>
       `;
 
       ctx.handleSync(() => {
@@ -118,23 +123,25 @@ defmodule SmartAnimation do
       });
 
       const start = ctx.root.querySelector("#start");
+      const stop = ctx.root.querySelector("#stop");
+
+      stop.style.display = "none"
+
       start.addEventListener("click", (event) => {
         start.style.display = "none"
         stop.style.display = "inline"
         ctx.pushEvent("start", {});
       });
 
-      const stop = ctx.root.querySelector("#stop");
-      stop.style.display = "none"
       stop.addEventListener("click", (event) => {
         stop.style.display = "none"
         start.style.display = "inline"
         ctx.pushEvent("stop", {});
       });
 
-      const restart = ctx.root.querySelector("#restart");
-      restart.addEventListener("click", (event) => {
-        ctx.pushEvent("restart", {});
+      const reset = ctx.root.querySelector("#reset");
+      reset.addEventListener("click", (event) => {
+        ctx.pushEvent("reset", {});
       });
 
       const next = ctx.root.querySelector("#next");
@@ -152,6 +159,34 @@ defmodule SmartAnimation do
 
   asset "main.css" do
     """
+    .control {
+      padding: 1rem;
+      background-color: rgb(240 245 249);
+      border-radius: 0.5rem;
+      font-weight: 500;
+      color: rgb(97 117 138);
+      font-family: Inter, system-ui,-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .icon {
+        font-size: 1.875rem;
+        padding: 0 1rem;
+    }
+
+    #reset {
+      position: absolute;
+      left: 1rem;
+      top: auto;
+      bottom: auto;
+    }
+
+    .icon:hover, #reset:hover {
+      color: black;
+      cursor: pointer
+    }
     """
   end
 end

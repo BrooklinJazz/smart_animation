@@ -10,10 +10,6 @@ Mix.install([
 ## Usage
 
 ```elixir
-
-```
-
-```elixir
 SmartAnimation.new(fn x ->
   Kino.Markdown.new("This is animation frame #{x}")
 end)
@@ -35,23 +31,4 @@ We recommend using this project with [Hidden Cell](https://github.com/BrooklinJa
 SmartAnimation.new(fn x ->
   Kino.Markdown.new("This is animation frame #{x}")
 end)
-```
-
-```elixir
-defmodule Timer do
-  use GenServer
-
-  def start_link(opts) do
-    GenServer.start_link(__MODULE__, [], opts)
-  end
-
-  def init(state) do
-    {:ok, state}
-  end
-
-  def handle_info()
-end
-
-# :timer.send_interval(1000, :increment)
-# :timer.start()
 ```
