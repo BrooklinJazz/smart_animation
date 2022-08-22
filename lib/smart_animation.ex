@@ -56,6 +56,7 @@ defmodule SmartAnimation do
   end
 
   def update_animation(ctx) do
+    broadcast_event(ctx, "update_animation", %{"step" => ctx.assigns.step})
     Kino.Frame.render(ctx.assigns.frame, ctx.assigns.function.(ctx.assigns.step))
     ctx
   end
@@ -73,7 +74,7 @@ defmodule SmartAnimation do
 
   @impl true
   def handle_connect(ctx) do
-    {:ok, %{}, ctx}
+    {:ok, %{"start" => ctx.assigns.start, "finish" => ctx.assigns.finish}, ctx}
   end
 
   @impl true
@@ -120,6 +121,7 @@ defmodule SmartAnimation do
       ctx.root.innerHTML = `
         <section class="control">
           <span id="reset">Reset</span>
+          <span id="step"></span>
           <i id="previous" class="ri-arrow-left-fill icon"></i>
           <i id="start" class="ri-play-fill icon"></i>
           <i id="stop" class="ri-stop-fill icon"></i>
@@ -140,6 +142,13 @@ defmodule SmartAnimation do
       const next = ctx.root.querySelector("#next");
       const previous = ctx.root.querySelector("#previous");
       const speed_multiplier = ctx.root.querySelector("#speed_multiplier");
+      const step = ctx.root.querySelector("#step");
+
+      if (payload.finish) {
+        step.innerHTML = `1/${payload.finish - payload.start + 1}`
+      } else {
+        step.innerHTML = 1
+      }
 
       stop.style.display = "none"
 
@@ -176,6 +185,15 @@ defmodule SmartAnimation do
       ctx.handleEvent("toggle_speed", ({ speed }) => {
         speed_multiplier.innerHTML = `${speed}x`;
       });
+
+
+      ctx.handleEvent("update_animation", ({ step: current_step }) => {
+        if (payload.finish) {
+          step.innerHTML = `${1 + current_step - payload.start}/${payload.finish - payload.start + 1}`
+        } else {
+          step.innerHTML = current_step
+        }
+      });
     }
     """
   end
@@ -203,6 +221,12 @@ defmodule SmartAnimation do
       position: absolute;
       left: 1rem;
     }
+
+    #step {
+      position: absolute;
+      left: 20%;
+    }
+
 
     #speed_multiplier {
       position: absolute;

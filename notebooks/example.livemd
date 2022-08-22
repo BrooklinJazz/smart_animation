@@ -21,14 +21,26 @@ Mix.install([
 
 ## Usage
 
+Example: infinitely increments the current frame starting a `1`.
+
 ```elixir
-SmartAnimation.new(fn x ->
-  Kino.Markdown.new("This is animation frame #{x}")
+SmartAnimation.new(fn frame ->
+  Kino.Markdown.new("This is animation frame #{frame}")
 end)
 ```
 
+Can provide a range and function.
+
 ```elixir
-SmartAnimation.new(0..10, fn x ->
+SmartAnimation.new(0..10, fn index ->
+  Kino.Markdown.new("This is animation frame #{index}")
+end)
+```
+
+Smart Animation calculates the number of frames and displays the current count `1/7` even when the frames are `2..8`.
+
+```elixir
+SmartAnimation.new(2..8, fn x ->
   Kino.Markdown.new("This is animation frame #{x}")
 end)
 ```
