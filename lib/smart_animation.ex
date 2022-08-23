@@ -54,8 +54,6 @@ defmodule SmartAnimation do
       |> max(@min_speed)
       |> min(@max_speed)
 
-    IO.inspect(binding())
-
     Kino.JS.Live.new(__MODULE__,
       function: state.function,
       frame: frame,
