@@ -51,9 +51,19 @@ end)
 SmartAnimation.new(Enum.map(1..10, fn frame -> Kino.Markdown.new("### Heading #{frame}") end))
 ```
 
-### Hidden Cell
+## Speed Multiplier
 
-We recommend using this project with [Hidden Cell](https://github.com/BrooklinJazz/hidden_cell) if you want to hide the code powering the animation.
+You can alter the `:speed_multiplier` by providing it in a list of options. `10` is the maximum and `0.5` is the minumum. Provide a float or integer divisible by `0.5`.
+
+The speed multiplier automatically increments by `0.5` evertime you click it, so you'll want an initial speed multiplier divisible by `0.5` to avoid odd behavior.
+
+```elixir
+SmartAnimation.new(1..10, fn i -> i end, speed_multiplier: 0.5)
+```
+
+## Hidden Cell
+
+Use the [Hidden Cell](https://github.com/BrooklinJazz/hidden_cell) project if you want to hide the code powering the animation.
 
 <!-- livebook:{"attrs":{"source":"SmartAnimation.new(fn x ->\n  Kino.Markdown.new(\"This is animation frame #{x}\")\nend)","title":"Hidden Animation"},"kind":"Elixir.HiddenCell","livebook_object":"smart_cell"} -->
 

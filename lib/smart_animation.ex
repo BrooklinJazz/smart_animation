@@ -2,7 +2,7 @@ defmodule SmartAnimation do
   use Kino.JS
   use Kino.JS.Live
   @max_speed 10
-  @min_speed 1
+  @min_speed 0.5
   @default_speed 1
 
   @spec new(list() | Range.t() | nil, (integer() -> any()), list()) :: Kino.JS.Live.t()
@@ -106,7 +106,12 @@ defmodule SmartAnimation do
 
   @impl true
   def handle_connect(ctx) do
-    {:ok, %{"start" => ctx.assigns.start, "finish" => ctx.assigns.finish}, ctx}
+    {:ok,
+     %{
+       "start" => ctx.assigns.start,
+       "finish" => ctx.assigns.finish,
+       "speed_multiplier" => ctx.assigns.speed_multiplier
+     }, ctx}
   end
 
   @impl true
@@ -158,7 +163,7 @@ defmodule SmartAnimation do
           <i id="start" class="ri-play-fill icon"></i>
           <i id="stop" class="ri-stop-fill icon"></i>
           <i id="next" class="ri-arrow-right-fill icon"></i>
-          <span id="speed_multiplier">1x</span>
+          <span id="speed_multiplier">${payload.speed_multiplier}x</span>
         </section>
       `;
 
