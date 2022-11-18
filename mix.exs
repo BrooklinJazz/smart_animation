@@ -22,7 +22,7 @@ defmodule SmartAnimation.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:kino, "~> 0.6.2"}
+      {:kino, "~> 0.7"}
     ]
   end
 end
